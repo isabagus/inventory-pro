@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavItems, NavItem } from "@/config/navigation";
 import {
   IconTag,
   IconWarehouse,
@@ -42,7 +44,7 @@ const ROLE_WIDGETS: Record<string, StatWidget[]> = {
     { title: "Total Brand Aktif", value: "5 Brand", desc: "Packsolution, Estella, dll", change: "Stabil", changeType: "neutral", iconKey: "tag" },
     { title: "Kapasitas Gudang", value: "2 Unit", desc: "Gudang 1 & Gudang 2 Ruko", change: "84% terpakai", changeType: "neutral", iconKey: "warehouse" },
     { title: "Efisiensi Produksi", value: "96.4%", desc: "Bulan berjalan", change: "+2.1%", changeType: "positive", iconKey: "gear" },
-    { title: "Status Sprint", value: "Sprint 1", desc: "Foundation & RBAC Aktif", change: "On track", changeType: "positive", iconKey: "zap" },
+    { title: "Valuasi Stok Material", value: "Rp 128.5 jt", desc: "Total 4 Kategori Bahan Baku", change: "+4.2%", changeType: "positive", iconKey: "invoice" },
   ],
   manager: [
     { title: "Antrean Pesanan", value: "18 SPK", desc: "Sedang dalam alur pengerjaan", change: "+4 baru", changeType: "positive", iconKey: "orders" },
@@ -186,6 +188,7 @@ const SAMPLE_ORDERS: OrderData[] = [
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const navItems = useNavItems();
   const [selectedBrandFilter, setSelectedBrandFilter] = useState<string>("Semua");
 
   const widgets = ROLE_WIDGETS[user?.role ?? ""] ?? ROLE_WIDGETS.owner;
@@ -326,13 +329,12 @@ export default function DashboardPage() {
                   </span>
                   {w.change && (
                     <span
-                      className={`text-[11px] font-medium px-1.5 py-0.5 rounded ${
-                        w.changeType === "positive"
+                      className={`text-[11px] font-medium px-1.5 py-0.5 rounded ${w.changeType === "positive"
                           ? "bg-[#ECFDF5] text-[#065F46] dark:bg-[#064E3B]/30 dark:text-[#34D399]"
                           : w.changeType === "negative"
-                          ? "bg-[#FEF2F2] text-[#991B1B] dark:bg-[#7F1D1D]/30 dark:text-[#F87171]"
-                          : "bg-[#F4F6FA] text-[#6B7684] dark:bg-[#1B2A44] dark:text-[#8A94A6]"
-                      }`}
+                            ? "bg-[#FEF2F2] text-[#991B1B] dark:bg-[#7F1D1D]/30 dark:text-[#F87171]"
+                            : "bg-[#F4F6FA] text-[#6B7684] dark:bg-[#1B2A44] dark:text-[#8A94A6]"
+                        }`}
                     >
                       {w.change}
                     </span>
@@ -365,11 +367,10 @@ export default function DashboardPage() {
                 <button
                   key={brand}
                   onClick={() => setSelectedBrandFilter(brand)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${
-                    selectedBrandFilter === brand
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${selectedBrandFilter === brand
                       ? "bg-[#2B5FC7] text-white dark:bg-[#3B6FE0]"
                       : "bg-[#F4F6FA] text-[#6B7684] hover:text-[#1B2436] border border-[#E2E6ED] dark:bg-[#1B2A44] dark:text-[#8A94A6] dark:hover:text-[#E8ECF3] dark:border-[#26334D]"
-                  }`}
+                    }`}
                 >
                   {brand}
                 </button>
@@ -438,82 +439,50 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Roadmap Sprint Section */}
+        {/* Quick Operational Modules Access */}
         <section className="rounded-xl bg-white dark:bg-[#16223A] border border-[#E2E6ED] dark:border-[#26334D] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-none transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-bold text-[#1B2436] dark:text-[#E8ECF3]">
-                Tahapan Roadmap Pengembangan Sistem (Sprint 1 – 6)
+                Pintasan Cepat Modul Operasional
               </h3>
               <p className="text-xs text-[#6B7684] dark:text-[#8A94A6]">
-                Pelacakan penyelesaian target deliverable ERP/CRM
+                Akses langsung ke alur kerja aktif sesuai wewenang {user?.role_display}
               </p>
             </div>
             <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-[#EFF4FE] text-[#2B5FC7] border border-[#D6E3FC] dark:bg-[#1D4ED8]/25 dark:text-[#60A5FA] dark:border-[#2563EB]/40 flex items-center gap-1">
               <IconCheck size={12} strokeWidth={2.5} />
-              <span>Sprint 1 Selesai</span>
+              <span>{navItems.filter((i: NavItem) => i.href !== "/dashboard").length} Modul Terhubung</span>
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {[
-              { sprint: 1, label: "Auth & RBAC", status: "done", iconId: "audit", tag: "MOD-09" },
-              { sprint: 2, label: "Inventori Multi-Gudang", status: "next", iconId: "inventory", tag: "MOD-01, 06" },
-              { sprint: 3, label: "Order FO & BOM", status: "next", iconId: "orders", tag: "MOD-02, 03" },
-              { sprint: 4, label: "SPK & Kanban", status: "next", iconId: "production", tag: "MOD-04, 05" },
-              { sprint: 5, label: "Kurs USD & Invoice", status: "next", iconId: "usd-analytics", tag: "MOD-07, 08" },
-              { sprint: 6, label: "UAT & Deployment", status: "next", iconId: "dashboard", tag: "VPS Nginx" },
-            ].map((s) => (
-              <div
-                key={s.sprint}
-                className={`p-3 rounded-lg border text-xs transition-colors ${
-                  s.status === "done"
-                    ? "bg-[#ECFDF5] border-[#A7F3D0] dark:bg-[#064E3B]/20 dark:border-[#065F46]/50"
-                    : "bg-[#F4F6FA] border-[#E2E6ED] dark:bg-[#1B2A44] dark:border-[#26334D]"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[#2B5FC7] dark:text-[#3B6FE0]">
-                    {renderNavIcon(s.iconId, undefined, 16)}
-                  </span>
-                  {s.status === "done" ? (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#D1FAE5] text-[#065F46] dark:bg-[#064E3B] dark:text-[#34D399]">
-                      SELESAI
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {navItems
+              .filter((item: NavItem) => item.href !== "/dashboard")
+              .map((item: NavItem) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className="p-3.5 rounded-lg border border-[#E2E6ED] dark:border-[#26334D] bg-[#F4F6FA]/60 hover:bg-[#EFF4FE] dark:bg-[#1B2A44]/60 dark:hover:bg-[#1B2A44] transition-all group flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="p-2 rounded-lg bg-white dark:bg-[#16223A] border border-[#E2E6ED] dark:border-[#26334D] text-[#2B5FC7] dark:text-[#3B6FE0] group-hover:scale-105 transition-transform">
+                      {renderNavIcon(item.id, undefined, 18)}
                     </span>
-                  ) : (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#E2E6ED] text-[#6B7684] dark:bg-[#26334D] dark:text-[#8A94A6]">
-                      S{s.sprint}
+                    <span className="text-xs text-[#2B5FC7] dark:text-[#3B6FE0] opacity-0 group-hover:opacity-100 transition-opacity font-medium">
+                      Buka →
                     </span>
-                  )}
-                </div>
-                <div className="font-semibold text-[#1B2436] dark:text-[#E8ECF3] truncate">
-                  {s.label}
-                </div>
-                <div className="text-[10px] text-[#6B7684] dark:text-[#8A94A6] mt-0.5">
-                  {s.tag}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Active Permissions Section */}
-        <section className="rounded-xl bg-white dark:bg-[#16223A] border border-[#E2E6ED] dark:border-[#26334D] p-4 text-xs shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-none transition-colors">
-          <div className="flex items-center gap-2 mb-2">
-            <IconShield size={14} className="text-[#2B5FC7] dark:text-[#3B6FE0]" />
-            <span className="text-xs font-semibold text-[#6B7684] dark:text-[#8A94A6] uppercase tracking-wider">
-              Izin Akses Role Anda ({user?.permissions?.length ?? 0} permission)
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {(user?.permissions ?? []).map((perm) => (
-              <span
-                key={perm}
-                className="px-2 py-0.5 rounded-md bg-[#F4F6FA] dark:bg-[#1B2A44] text-[#1B2436] dark:text-[#E8ECF3] border border-[#E2E6ED] dark:border-[#26334D] font-mono text-[11px]"
-              >
-                {perm}
-              </span>
-            ))}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-xs text-[#1B2436] dark:text-[#E8ECF3] group-hover:text-[#2B5FC7] dark:group-hover:text-[#3B6FE0] transition-colors">
+                      {item.label}
+                    </div>
+                    <div className="text-[10px] text-[#6B7684] dark:text-[#8A94A6] mt-0.5">
+                      Klik untuk membuka modul
+                    </div>
+                  </div>
+                </Link>
+              ))}
           </div>
         </section>
       </div>

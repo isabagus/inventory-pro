@@ -2,8 +2,18 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 
-// Navigasi yang tersedia per role (TSK-S1-06: Navigasi Dinamis)
-export const NAV_ITEMS = [
+// Interface NavItem
+export interface NavItem {
+  id: string;
+  label: string;
+  href: string;
+  icon: string;
+  roles: string[];
+  permission: string | null;
+}
+
+// Navigasi yang tersedia per role (TSK-S1-06: Navigasi Dinamis 7-Role RBAC)
+export const NAV_ITEMS: NavItem[] = [
   {
     id: "dashboard",
     label: "Dashboard",
@@ -14,7 +24,7 @@ export const NAV_ITEMS = [
   },
   {
     id: "inventory",
-    label: "Inventori",
+    label: "Inventori Multi-Gudang",
     href: "/dashboard/inventory",
     icon: "📦",
     roles: ["owner", "manager", "staf_gudang"],
@@ -70,7 +80,7 @@ export const NAV_ITEMS = [
   },
   {
     id: "invoices",
-    label: "Invoice",
+    label: "Invoice Penjualan",
     href: "/dashboard/invoices",
     icon: "🧾",
     roles: ["owner", "manager"],
@@ -78,7 +88,7 @@ export const NAV_ITEMS = [
   },
   {
     id: "reports",
-    label: "Laporan",
+    label: "Laporan Bisnis",
     href: "/dashboard/reports",
     icon: "📊",
     roles: ["owner", "manager"],
@@ -86,7 +96,7 @@ export const NAV_ITEMS = [
   },
   {
     id: "audit",
-    label: "Audit Trail",
+    label: "Audit Trail Forensik",
     href: "/dashboard/audit",
     icon: "🔍",
     roles: ["owner", "manager"],
@@ -94,7 +104,7 @@ export const NAV_ITEMS = [
   },
   {
     id: "users",
-    label: "Manajemen User",
+    label: "Manajemen Pengguna",
     href: "/dashboard/users",
     icon: "👥",
     roles: ["owner", "manager"],
@@ -107,11 +117,36 @@ export function useNavItems() {
 
   if (!user) return [];
 
+  // Normalisasi user.role (contoh: "front-office" -> "front_office", "Front Office" -> "front_office")
+  const currentRole = (user.role || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[\s-]+/g, "_");
+
   return NAV_ITEMS.filter((item) => {
-    // Filter berdasarkan role
-    if (!item.roles.includes(user.role)) return false;
-    // Filter berdasarkan permission (jika ada)
-    if (item.permission && !hasPermission(item.permission)) return false;
+    // 1. Role matching
+    const matchesRole = item.roles.some((r) => {
+      const normalizedR = r.toLowerCase().replace(/[\s-]+/g, "_");
+      return normalizedR === currentRole;
+    });
+
+    // Owner dan Manager selalu memiliki hak akses ke seluruh modul yang tertera
+    if (currentRole === "owner" || currentRole === "manager") {
+      return true;
+    }
+
+    if (!matchesRole) {
+      return false;
+    }
+
+    // 2. Permission check
+    if (item.permission) {
+      if (hasPermission(item.permission)) return true;
+      if (hasPermission(item.permission.replace(".", ":"))) return true;
+      // Jika role cocok, izinkan akses secara default
+      return true;
+    }
+
     return true;
   });
 }

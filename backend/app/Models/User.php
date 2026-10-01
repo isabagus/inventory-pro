@@ -4,9 +4,10 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -18,13 +19,20 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * @var list<string>
+     */
     protected $fillable = [
         'name',
         'email',
         'password',
         'role_id',
+        'is_active',
     ];
 
+    /**
+     * @var list<string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
@@ -40,11 +48,12 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 
     /**
-     * Relasi ke Role (Many users belong to one Role).
+     * @return BelongsTo<Role, $this>
      */
     public function role(): BelongsTo
     {
@@ -52,19 +61,23 @@ class User extends Authenticatable
     }
 
     /**
-     * Cek apakah user memiliki role tertentu.
+     * @return HasMany<RefreshToken, $this>
      */
-    public function hasRole(string $roleName): bool
+    public function refreshTokens(): HasMany
     {
-        return $this->role?->name === $roleName;
+        return $this->hasMany(RefreshToken::class);
     }
 
     /**
-     * Cek apakah user memiliki permission tertentu (via role).
+     * Cek apakah user memiliki role tertentu (by slug or name).
      */
-    public function hasPermission(string $permission): bool
+    public function hasRole(string $role): bool
     {
-        return $this->role?->hasPermission($permission) ?? false;
+        if (! $this->role) {
+            return false;
+        }
+
+        return $this->role->slug === $role || $this->role->name === $role;
     }
 
     /**
@@ -72,6 +85,24 @@ class User extends Authenticatable
      */
     public function hasAnyRole(array $roles): bool
     {
-        return in_array($this->role?->name, $roles);
+        if (! $this->role) {
+            return false;
+        }
+
+        return in_array($this->role->slug, $roles) || in_array($this->role->name, $roles);
+    }
+
+    /**
+     * Cek apakah user memiliki permission tertentu (by slug or name).
+     */
+    public function hasPermission(string $permission): bool
+    {
+        if (! $this->role) {
+            return false;
+        }
+
+        return $this->role->permissions->contains(function ($p) use ($permission) {
+            return ($p->slug ?? null) === $permission || ($p->name ?? null) === $permission;
+        });
     }
 }

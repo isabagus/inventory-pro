@@ -14,8 +14,10 @@ export default function BottomNav({ onOpenMenu, onOpenRopModal }: BottomNavProps
   const { user } = useAuth();
   const pathname = usePathname();
 
+  const normalizedRole = (user?.role || "").toLowerCase().replace(/[\s-]+/g, "_");
+
   const getPrimaryModule = () => {
-    switch (user?.role) {
+    switch (normalizedRole) {
       case "front_office":
         return { id: "orders", label: "Order", href: "/dashboard/orders" };
       case "tim_design":

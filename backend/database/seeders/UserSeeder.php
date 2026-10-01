@@ -65,10 +65,14 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $userData) {
-            $role = Role::where('name', $userData['role'])->first();
+            $roleSlug = str_replace('_', '-', $userData['role']);
+            $role = Role::where('slug', $roleSlug)
+                ->orWhere('slug', $userData['role'])
+                ->orWhere('name', $userData['role'])
+                ->first();
 
             if (! $role) {
-                $this->command->warn("⚠️  Role '{$userData['role']}' tidak ditemukan. Jalankan RolePermissionSeeder terlebih dahulu.");
+                $this->command->warn("⚠️  Role '{$userData['role']}' tidak ditemukan. Jalankan RoleSeeder terlebih dahulu.");
                 continue;
             }
 

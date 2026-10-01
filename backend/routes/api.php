@@ -1,19 +1,22 @@
 <?php
 
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BrandController;
+use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\MaterialController;
+use App\Http\Controllers\Api\V1\SupplierController;
+use App\Http\Controllers\Api\V1\WarehouseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-/**
- * TSK-S1-05: API Routes untuk Sistem ERP/CRM CV Solusi Inovasi Packaging
- * Arsitektur: Laravel 11 REST API + Sanctum Token Authentication
- */
-
 /*
 |--------------------------------------------------------------------------
-| Health Check (Public)
+| API Routes - Packsolution ERP/CRM Multi-Brand & Multi-Gudang
 |--------------------------------------------------------------------------
+| Base URL Prefix: /api
 */
+
+// Health Check
 Route::get('/health', function () {
     return response()->json([
         'status'    => 'ok',
@@ -24,34 +27,55 @@ Route::get('/health', function () {
     ]);
 });
 
-/*
-|--------------------------------------------------------------------------
-| Authentication Routes (Public - No Auth Required)
-|--------------------------------------------------------------------------
-*/
-Route::prefix('auth')->group(function () {
-    Route::post('/login',  [AuthController::class, 'login']);
-});
-
-/*
-|--------------------------------------------------------------------------
-| Protected Routes (Require Sanctum Token)
-|--------------------------------------------------------------------------
-*/
-Route::middleware('auth:sanctum')->group(function () {
-
-    // Auth: logout & me
-    Route::prefix('auth')->group(function () {
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::get('/me',     [AuthController::class, 'me']);
+// Helper closure to register Master Data routes
+$registerMasterRoutes = function () {
+    // Materials CRUD (MOD-01)
+    Route::apiResource('materials', MaterialController::class);
+    Route::get('inventory/materials', [MaterialController::class, 'index']);
+    Route::get('inventory/alerts/rop', function (Request $request, MaterialController $controller) {
+        $request->merge(['low_stock_only' => true]);
+        return $controller->index($request);
     });
 
-    // Placeholder routes per modul - akan diisi setiap sprint
-    // MOD-09: User Management (hanya owner & manager)
-    Route::prefix('users')->middleware('role:owner,manager')->group(function () {
-        Route::get('/', function () {
-            return response()->json(['message' => 'User management - Coming Sprint 1 finalization']);
+    // Warehouses CRUD
+    Route::apiResource('warehouses', WarehouseController::class);
+
+    // Brands CRUD
+    Route::apiResource('brands', BrandController::class);
+
+    // Categories CRUD
+    Route::apiResource('categories', CategoryController::class);
+
+    // Suppliers CRUD
+    Route::apiResource('suppliers', SupplierController::class);
+};
+
+// 1. Versioned Routes: /api/v1/...
+Route::prefix('v1')->group(function () use ($registerMasterRoutes) {
+    // Auth
+    Route::prefix('auth')->group(function () {
+        Route::post('/login',   [AuthController::class, 'login']);
+        Route::post('/refresh', [AuthController::class, 'refresh']);
+
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::post('/logout', [AuthController::class, 'logout']);
+            Route::get('/me',      [AuthController::class, 'me']);
         });
     });
 
+    // Master Data
+    $registerMasterRoutes();
 });
+
+// 2. Direct Routes: /api/... (Alias for easy access and backward compatibility)
+Route::prefix('auth')->group(function () {
+    Route::post('/login',   [AuthController::class, 'login']);
+    Route::post('/refresh', [AuthController::class, 'refresh']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/me',      [AuthController::class, 'me']);
+    });
+});
+
+$registerMasterRoutes();

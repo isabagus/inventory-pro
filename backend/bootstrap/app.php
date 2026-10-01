@@ -18,10 +18,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'       => \App\Http\Middleware\CheckRole::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
-
-        // Dinonaktifkan: Kita menggunakan stateless Bearer Token, bukan cookie session SPA.
-        // Ini mencegah error 419 CSRF Token Mismatch saat login dari frontend Next.js.
-        // $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
